@@ -9,7 +9,8 @@ class ProductGenerationService:
         data = self.product.to_data_array_without_images()
 
         # Ajoute les tags au produit
-        data["product"]["tags"] = self.tag_service.get_tags()
+        tags = self.tag_service.get_tags()
+        data["product"]["tags"] = ", ".join(tags) if tags else ""
 
         # Ajoute les images si elles existent
         images = self.image_service.to_data_array_only_images()["product"]["images"]
@@ -18,11 +19,14 @@ class ProductGenerationService:
 
         # Supprime le champ 'options' s'il est vide ou non défini
         if "options" in data["product"]:
-            cleaned_options = [opt for opt in data["product"]["options"] if data["product"]["options"] != ""]
-            if not cleaned_options:
-                del data["product"]["options"]  # Supprime si aucune option valide
-            else:
+            cleaned_options = [
+                opt for opt in data["product"]["options"]
+                if isinstance(opt, dict) and opt.get("name")
+            ]
+            if cleaned_options:
                 data["product"]["options"] = cleaned_options
+            else:
+                del data["product"]["options"]  # Supprime si aucune option valide
 
         return data
 
